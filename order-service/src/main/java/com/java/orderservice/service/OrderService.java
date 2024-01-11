@@ -6,16 +6,17 @@ import com.java.orderservice.common.Payment;
 import com.java.orderservice.common.TransactionRequest;
 import com.java.orderservice.common.TransactionResponse;
 import com.java.orderservice.entity.Order;
+import com.java.orderservice.exception.OrderNotFoundException;
 import com.java.orderservice.repository.OrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class OrderService {
@@ -54,20 +55,16 @@ public class OrderService {
 
     }
 
-    public TransactionResponse getOrder(int orderId) {
+    public TransactionResponse getOrder(int orderId) throws OrderNotFoundException {
         String response = "";
         Order order = orderRepository.findById(orderId).orElse(null);
-        Payment payment = new Payment();
-        payment.setOrderId(order.getId());
-        payment.setAmount(order.getPrice());
-
-        Payment paymentResponse = restTemplate.postForObject(paymentEndpoint, payment, Payment.class);
-        response = paymentResponse.getPaymentStatus().equals("Success") ? "Payment processed and Order placed" : "Payment failed";
-
-
+        Payment paymentResponse = null;
+        try {
+            paymentResponse = restTemplate.getForObject("http://PAYMENT-SERVICE/payment/" + orderId, Payment.class);
+        } catch (HttpClientErrorException e) {
+            throw new OrderNotFoundException("Order Not Found");
+        }
         return new TransactionResponse(order, paymentResponse.getAmount(), paymentResponse.getTransactionId(), response);
-
-
     }
 
     public TransactionResponse getAllOrder() {
