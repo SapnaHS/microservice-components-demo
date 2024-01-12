@@ -56,6 +56,7 @@ public class OrderService {
     }
 
     public TransactionResponse getOrder(int orderId) throws OrderNotFoundException {
+        log.info("In getOrder method service class");
         String response = "";
         Order order = orderRepository.findById(orderId).orElse(null);
         Payment paymentResponse = null;

@@ -7,12 +7,16 @@ import com.java.orderservice.service.OrderService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 
 @RestController
 @RequestMapping("/order")
+@EnableCaching
 public class OrderController {
 
     @Autowired
@@ -29,8 +33,9 @@ public class OrderController {
     @GetMapping("/{orderId}")
     //@CircuitBreaker(name = "orderService", fallbackMethod = "getOrdersFallback")
     //@Retry(name = "orderService", fallbackMethod = "getOrdersFallback")
+    @Cacheable(key = "#orderId", value = "Order", unless = "#orderId > 100")
     public TransactionResponse getOrder(@PathVariable int orderId) throws OrderNotFoundException {
-        System.out.println("Retry count " + count++ + " at " + new Date());
+        //System.out.println("Retry count " + count++ + " at " + new Date());
         return orderService.getOrder(orderId);
     }
 
